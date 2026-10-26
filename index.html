@@ -127,7 +127,17 @@
       --glass-4: rgba(255,255,255,0.100);
       --muted-2: #b3afa4;
       --nav-bg:  rgba(19,18,16,0.94);
-      --hero-grad: linear-gradient(155deg, #1a1630 0%, #131210 44%, #10202c 100%);
+      /* Layered rather than a single sweep, so the hero has depth instead of a
+         flat wash: a cool violet pool top-left behind the name, and warmer
+         pools on the right to keep the far side from going dead. */
+      --hero-grad:
+        radial-gradient(ellipse 34% 26% at 88% 78%,
+          rgba(228,198,156,0.10) 0%, rgba(228,198,156,0) 70%),
+        radial-gradient(ellipse 40% 56% at 88% 46%,
+          rgba(232,205,168,0.11) 0%, rgba(232,205,168,0.04) 45%, rgba(232,205,168,0) 74%),
+        radial-gradient(ellipse 66% 58% at 16% 26%,
+          rgba(124,104,206,0.16) 0%, rgba(124,104,206,0) 66%),
+        linear-gradient(155deg, #1a1631 0%, #141210 46%, #18191f 100%);
 
       --viz-1: 171,157,247;
       --viz-2: 110,194,242;
@@ -270,15 +280,25 @@
 
     /* Rotating 3D point cloud behind the hero — a data cloud, not a mesh.
        Sits under .hero-top (z-index 1) and never takes the pointer. */
-    #heroCloud { position:absolute; inset:0; width:100%; height:100%;
-      z-index:0; pointer-events:none; opacity:.62; }
-    @media (max-width:700px){ #heroCloud{ opacity:.42; } }
+    #heroCloud, #heroCloudFront {
+      position:absolute; inset:0; width:100%; height:100%;
+      pointer-events:none; opacity:.62;
+    }
+    #heroCloud { z-index:0; }
+    /* The near half of the cloud draws above .hero-top (z-index 1) so points
+       genuinely pass in front of the hero content rather than always behind it.
+       That is what the depth sort was already describing; splitting across two
+       canvases is what makes it visible. */
+    #heroCloudFront { z-index:2; }
+    @media (max-width:700px){ #heroCloud, #heroCloudFront { opacity:.42; } }
     .hero-top {
-      display: flex; flex-direction: column; justify-content: center;
-      padding-top: 5rem; max-width: 900px;
+      display: grid; grid-template-columns: minmax(0,1fr);
+      align-items: center; align-content: center;
+      padding-top: 5rem; max-width: 1240px; width: 100%;
       position: relative; z-index: 1;
     }
     .hero-main { perspective: 900px; }
+
     .hero-dot {
       width: 8px; height: 8px; border-radius: 50%; background: var(--sage-d);
       animation: pulse 2s infinite; flex-shrink: 0;
@@ -753,7 +773,7 @@
         transition-duration:0.001ms !important; scroll-behavior:auto !important;
       }
       #hero-name-3d, .blob { transform:none !important; }
-      #heroCloud { opacity:.34 !important; }
+      #heroCloud, #heroCloudFront { opacity:.34 !important; }
       .reveal { opacity: 1 !important; transform: none !important; }
     }
   
@@ -830,6 +850,7 @@
     <div class="blob b2"></div>
     <div class="blob b3"></div>
     <canvas id="heroCloud" aria-hidden="true"></canvas>
+    <canvas id="heroCloudFront" aria-hidden="true"></canvas>
 
     <div class="hero-top">
       <div class="hero-main">
@@ -1663,8 +1684,10 @@
 
 (function heroCloud(){
   var cv = document.getElementById('heroCloud');
+  var cvF = document.getElementById('heroCloudFront');
   if (!cv || !cv.getContext) return;
   var ctx = cv.getContext('2d');
+  var ctxF = cvF && cvF.getContext ? cvF.getContext('2d') : null;
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* seeded so the cloud is the same shape on every visit */
@@ -1711,6 +1734,10 @@
     W = Math.max(1, r.width); H = Math.max(1, r.height);
     cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
+    if (ctxF){
+      cvF.width = cv.width; cvF.height = cv.height;
+      ctxF.setTransform(dpr,0,0,dpr,0,0);
+    }
   }
 
   /* Rotation is a slow autonomous drift plus a pointer-driven offset, held
@@ -1719,12 +1746,20 @@
      mouseleave, so the drift is what remains when nobody is pointing. */
   var spin = 0.4, yawOff = 0, pitch = 0.22, tgtYaw = 0, tgtPitch = 0;
   var yaw = spin;
+  /* The split point in the cloud's depth range: points nearer than this paint
+     on the front canvas, above the hero content, and the rest behind it. */
+  var FRONT_Z = 3.15;
   function frame(){
     ctx.clearRect(0,0,W,H);
+    if (ctxF) ctxF.clearRect(0,0,W,H);
     var cyw=Math.cos(yaw), syw=Math.sin(yaw);
     var cpt=Math.cos(pitch), spt=Math.sin(pitch);
-    var scale = Math.min(W,H)*0.58, DIST = 3.2;
-    var cx = W*0.68, cy = H*0.46;        /* offset right, clear of the text */
+    var scale = Math.min(W,H)*0.92, DIST = 3.2;
+    /* Stretched on x only. Widening it uniformly would also make it tall
+       enough to collide with the name, so the stretch is horizontal: it
+       carries the cloud across the hero without growing vertically. */
+    var XSTRETCH = 1.55;
+    var cx = W*0.58, cy = H*0.46;
     var out = [];
     for (var i=0;i<pts.length;i++){
       var p=pts[i];
@@ -1734,18 +1769,20 @@
       var Zc = p.y*spt + Z*cpt + DIST;
       if (Zc < 0.25) continue;
       var k = scale/Zc;
-      out.push({sx:cx+X*k, sy:cy-Y*k, d:Zc, r:p.r, c:COLORS[p.ci % COLORS.length]});
+      out.push({sx:cx+X*k*XSTRETCH, sy:cy-Y*k, d:Zc, r:p.r, c:COLORS[p.ci % COLORS.length]});
     }
     out.sort(function(a,b){ return b.d-a.d; });      /* far first */
     for (var j=0;j<out.length;j++){
       var o=out[j];
       var depth = Math.max(0, Math.min(1, (4.6-o.d)/2.8));
       var rad = o.r*(0.45+depth*1.25);
-      ctx.globalAlpha = 0.10 + depth*0.42;
-      ctx.fillStyle = 'rgb('+o.c+')';
-      ctx.beginPath(); ctx.arc(o.sx,o.sy,rad,0,6.283); ctx.fill();
+      var g = (ctxF && o.d < FRONT_Z) ? ctxF : ctx;
+      g.globalAlpha = 0.10 + depth*0.42;
+      g.fillStyle = 'rgb('+o.c+')';
+      g.beginPath(); g.arc(o.sx,o.sy,rad,0,6.283); g.fill();
     }
     ctx.globalAlpha = 1;
+    if (ctxF) ctxF.globalAlpha = 1;
   }
 
   var running=false, raf=null;
