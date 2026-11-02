@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://aditi1910.github.io/aditi-shelke-portfolio/sitemap.xml
+Sitemap: https://aditi1910.github.io/sitemap.xml

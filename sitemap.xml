@@ -1,62 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/index.html</loc>
+    <loc>https://aditi1910.github.io/</loc>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/airbnb_dashboard.html</loc>
+    <loc>https://aditi1910.github.io/files/airbnb_dashboard.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/attrition_dashboard.html</loc>
+    <loc>https://aditi1910.github.io/files/attrition_dashboard.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/credit_risk_dashboard.html</loc>
+    <loc>https://aditi1910.github.io/files/credit_risk_dashboard.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/executive_dashboard.html</loc>
+    <loc>https://aditi1910.github.io/files/credit_scorecard.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/loan_appraisal_dashboard.html</loc>
+    <loc>https://aditi1910.github.io/files/executive_dashboard.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/marketing_dashboard.html</loc>
+    <loc>https://aditi1910.github.io/files/loan_appraisal_dashboard.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/nivaaslink_case_study.html</loc>
+    <loc>https://aditi1910.github.io/files/marketing_dashboard.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/nivaaslink_mvp.html</loc>
+    <loc>https://aditi1910.github.io/files/nivaaslink_case_study.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/sales_dashboard.html</loc>
+    <loc>https://aditi1910.github.io/files/nivaaslink_mvp.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/security_dashboard.html</loc>
+    <loc>https://aditi1910.github.io/files/pva_mailing_advisor.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aditi1910.github.io/aditi-shelke-portfolio/files/supplychain_dashboard.html</loc>
+    <loc>https://aditi1910.github.io/files/sales_dashboard.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aditi1910.github.io/files/security_dashboard.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aditi1910.github.io/files/supplychain_dashboard.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
