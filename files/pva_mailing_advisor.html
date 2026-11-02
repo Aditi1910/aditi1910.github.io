@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PVA Donor Mailing Advisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#14284B; --navy-2:#1F3A6B; --red:#C8102E; --red-soft:#FBE7EA;
+  --bg:#F4F6FA; --surface:#FFFFFF; --ink:#18212F; --muted:#5A6476; --line:#DCE1EA;
+  --good:#1F7A4D; --good-soft:#E3F3EA; --skip:#C3CAD6; --skip-ink:#6B7486; --track:#E3E8F0;
+  --header-bg:#14284B;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --navy:#9DB6E8; --navy-2:#3E63A8; --red:#F0566C; --red-soft:#3A1D24;
+    --bg:#0F1522; --surface:#182133; --ink:#E7ECF4; --muted:#A3AEC2; --line:#2A3650;
+    --good:#4FBF86; --good-soft:#163326; --skip:#3A465E; --skip-ink:#8E99AE; --track:#24304A;
+    --header-bg:#0A1A36; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --navy:#9DB6E8; --navy-2:#3E63A8; --red:#F0566C; --red-soft:#3A1D24;
+  --bg:#0F1522; --surface:#182133; --ink:#E7ECF4; --muted:#A3AEC2; --line:#2A3650;
+  --good:#4FBF86; --good-soft:#163326; --skip:#3A465E; --skip-ink:#8E99AE; --track:#24304A;
+  --header-bg:#0A1A36; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+header.top{background:var(--header-bg);color:#fff;border-bottom:6px solid var(--red)}
+header.top .wrap{padding-top:26px;padding-bottom:24px}
+.org{font-weight:600;font-size:.9rem;opacity:.8;margin:0 0 4px}
+h1{font-size:clamp(1.7rem,4.5vw,2.4rem);font-weight:800;letter-spacing:-.02em;line-height:1.15;margin:0 0 6px}
+.lede{margin:0;max-width:62ch;opacity:.92}
+main .wrap{padding-top:22px;padding-bottom:48px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+h2{font-size:1.15rem;font-weight:700;margin:0 0 4px}
+h3{font-size:.98rem;font-weight:700;margin:0 0 8px}
+.hint{color:var(--muted);font-size:.9rem;margin:0}
+
+/* Controls */
+.controls{display:grid;grid-template-columns:1.4fr 1fr;gap:28px}
+@media (max-width:760px){.controls{grid-template-columns:1fr;gap:20px}}
+.ctl-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.ctl-head label{font-weight:600}
+.ctl-val{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--navy-2)}
+:root:not([data-theme="light"]) .ctl-val{color:var(--ink)}
+.scale{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-top:2px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer;touch-action:pan-y}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(to right,var(--navy-2) 0 var(--p,50%),var(--track) var(--p,50%) 100%)}
+input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:var(--track)}
+input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:var(--navy-2)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-8px;border-radius:50%;background:#fff;border:4px solid var(--red);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:4px solid var(--red)}
+input[type=range]:focus-visible{outline:3px solid var(--red);outline-offset:4px;border-radius:6px}
+.toggle{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:.88rem;color:var(--muted);cursor:pointer}
+.toggle input{width:18px;height:18px;accent-color:var(--navy-2)}
+
+/* Advice */
+.advice{margin:18px 0;padding:18px 22px;border-radius:12px;background:var(--navy-2);color:#fff;font-size:clamp(1.05rem,2.4vw,1.3rem);font-weight:600;line-height:1.4}
+.advice small{display:block;font-size:.85rem;font-weight:500;opacity:.85;margin-top:6px}
+
+/* Tiles */
+.tiles{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:8px}
+@media (max-width:760px){.tiles{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.tile{font:inherit;position:relative;border:2px solid var(--skip);background:var(--surface);color:var(--skip-ink);border-radius:10px;padding:10px 4px 8px;text-align:center;cursor:pointer;transition:background-color .2s,border-color .2s,color .2s,transform .15s}
+.tile:hover{transform:translateY(-1px)}
+.tile:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.tile .tn{display:block;font-size:.72rem;font-weight:600}
+.tile .tbig{display:block;font-size:1.35rem;font-weight:800;line-height:1.1}
+.tile .tnet{display:block;font-size:.78rem;font-weight:600;font-variant-numeric:tabular-nums}
+.tile .chk{position:absolute;top:4px;right:6px;font-size:.85rem;font-weight:800;opacity:0;transform:scale(.4);transition:opacity .2s,transform .2s}
+.tile.on{background:var(--good);border-color:var(--good);color:#fff}
+.tile.on .chk{opacity:1;transform:scale(1)}
+.tile.part{border-color:var(--good);color:var(--good);background:var(--good-soft)}
+.tile.part .chk{opacity:1;transform:scale(1)}
+.tile.loss{border-style:dashed}
+.tile.sel{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--red)}
+.tiles-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--muted);margin:10px 0 0}
+.tiles-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+/* Results grid */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;margin-top:18px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:12px 0 0}
+.stat{background:var(--surface);padding:12px 16px}
+.stat dt{font-size:.82rem;color:var(--muted)}
+.stat dd{margin:2px 0 0;font-size:1.2rem;font-weight:700;font-variant-numeric:tabular-nums}
+.stat.hero{grid-column:1/-1}
+.stat.hero dd{font-size:1.9rem;font-weight:800;letter-spacing:-.02em;color:var(--good)}
+.stat.hero dd.neg{color:var(--red)}
+.meter{margin-top:14px}
+.meter-bar{height:10px;border-radius:5px;background:var(--track);overflow:hidden}
+.meter-fill{height:100%;background:var(--navy-2);width:0;transition:width .2s}
+.meter p{font-size:.82rem;color:var(--muted);margin:6px 0 0}
+.chart-box{position:relative;height:300px}
+.chart-fallback{color:var(--muted);font-size:.9rem}
+.logic ul{margin:0;padding-left:1.1em;font-size:.9rem}
+.logic li{margin:4px 0}
+.logic li.skip{color:var(--muted)}
+
+/* Donor lookup */
+.verdict{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 0}
+.badge{font-weight:800;font-size:1.25rem;padding:8px 16px;border-radius:8px}
+.badge.mail{background:var(--good-soft);color:var(--good)}
+.badge.nomail{background:var(--red-soft);color:var(--red)}
+.verdict p{margin:0;font-size:.92rem;flex:1 1 220px}
+.pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.pick button{font:inherit;font-weight:700;min-width:40px;padding:7px 0;border-radius:7px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.pick button[aria-pressed=true]{background:var(--navy-2);border-color:var(--navy-2);color:#fff}
+.pick button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+
+details.table{margin-top:18px}
+details.table summary{cursor:pointer;font-weight:600;color:var(--navy-2)}
+:root:not([data-theme="light"]) details.table summary{color:var(--navy)}
+.scroll{overflow-x:auto;margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums;min-width:600px}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted)}
+footer{font-size:.8rem;color:var(--muted);margin-top:24px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="org">Paralyzed Veterans of America, direct mail team</p>
+    <h1>Donor Mailing Advisor</h1>
+    <p class="lede">This tool uses our Phase 1 response model to recommend which donor segments to mail.</p>
+  </div>
+</header>
+
+<main><div class="wrap">
+
+  <section class="panel controls" aria-label="Mailing settings">
+    <div>
+      <div class="ctl-head"><label for="budget">Mailing budget</label><output class="ctl-val" id="budget-val" for="budget">$30,000</output></div>
+      <input type="range" id="budget" min="0" max="65000" step="1000" value="30000" aria-describedby="budget-scale">
+      <div class="scale" id="budget-scale"><span>$0</span><span>$65,000</span></div>
+      <label class="toggle"><input type="checkbox" id="partial"> Spend leftover budget on part of the next decile</label>
+    </div>
+    <div>
+      <div class="ctl-head"><label for="cost">Cost per piece</label><output class="ctl-val" id="cost-val" for="cost">$0.68</output></div>
+      <input type="range" id="cost" min="0.50" max="1.00" step="0.01" value="0.68" aria-describedby="cost-scale">
+      <div class="scale" id="cost-scale"><span>$0.50</span><span>$1.00</span></div>
+      <p class="hint" style="margin-top:12px">Raise the cost to see which deciles stop paying for themselves. Phase 1 assumed $0.68.</p>
+    </div>
+  </section>
+
+  <p class="advice" id="advice" aria-live="polite"></p>
+
+  <section class="panel" aria-label="Decile mailing plan">
+    <h2>Mailing plan by decile</h2>
+    <p class="hint" style="margin-bottom:12px">Tap a decile to check a single donor in it. The figure under each number is expected net per donor at the current cost.</p>
+    <div class="tiles" id="tiles"></div>
+    <div class="tiles-legend">
+      <span><i style="background:var(--good)"></i>Mailed</span>
+      <span><i style="background:var(--good-soft);border:1.5px solid var(--good)"></i>Partly mailed</span>
+      <span><i style="background:var(--surface);border:1.5px solid var(--skip)"></i>Skipped</span>
+      <span><i style="background:var(--surface);border:1.5px dashed var(--skip)"></i>Expected to lose money</span>
+    </div>
+  </section>
+
+  <div class="grid">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <section class="panel" aria-label="Expected results">
+        <h2>Expected results</h2>
+        <dl class="stats">
+          <div class="stat hero"><dt>Expected net donation</dt><dd id="s-net">$0</dd></div>
+          <div class="stat"><dt>Donors reached</dt><dd id="s-donors">0</dd></div>
+          <div class="stat"><dt>Expected responders</dt><dd id="s-resp">0</dd></div>
+          <div class="stat"><dt>Total cost</dt><dd id="s-cost">$0</dd></div>
+          <div class="stat"><dt>Expected revenue</dt><dd id="s-rev">$0</dd></div>
+        </dl>
+        <div class="meter"><div class="meter-bar"><div class="meter-fill" id="meter"></div></div><p id="meter-txt"></p></div>
+      </section>
+
+      <section class="panel" id="donor" aria-label="Single donor lookup">
+        <h2>Check one donor</h2>
+        <p class="hint">Pick the donor's decile. Uses the cost per piece above.</p>
+        <div class="pick" id="pick" role="group" aria-label="Donor decile"></div>
+        <div id="donor-out" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <section class="panel" aria-label="Expected net per donor chart">
+        <h2>Expected net per donor</h2>
+        <p class="hint" style="margin-bottom:10px">Green bars are mailed under the current plan. Bars below zero lose money at this cost.</p>
+        <div class="chart-box"><canvas id="chart" role="img" aria-label="Bar chart of expected net per donor by decile"></canvas></div>
+      </section>
+      <section class="panel logic" aria-label="Reasoning">
+        <h3>Why these deciles</h3>
+        <ul id="logic"></ul>
+        <details class="table">
+          <summary>Show the model's decile table</summary>
+          <div class="scroll"><table id="tbl"></table></div>
+        </details>
+      </section>
+    </div>
+  </div>
+
+  <footer>Figures come from the Phase 1 logistic regression response model. Expected revenue per donor is fixed by the model; net per donor is that revenue minus the cost per piece. Expected values are decile averages, not guarantees for any single donor.</footer>
+</div></main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+  const D = [
+    {d:1, n:9542,rr:0.0924,gift:7.56, rev:0.70},
+    {d:2, n:9542,rr:0.0757,gift:11.02,rev:0.83},
+    {d:3, n:9541,rr:0.0633,gift:13.80,rev:0.87},
+    {d:4, n:9541,rr:0.0514,gift:15.69,rev:0.81},
+    {d:5, n:9541,rr:0.0466,gift:17.40,rev:0.81},
+    {d:6, n:9541,rr:0.0485,gift:19.37,rev:0.94},
+    {d:7, n:9541,rr:0.0363,gift:22.25,rev:0.81},
+    {d:8, n:9541,rr:0.0358,gift:21.23,rev:0.76},
+    {d:9, n:9541,rr:0.0314,gift:21.80,rev:0.68},
+    {d:10,n:9541,rr:0.0261,gift:27.35,rev:0.71}
+  ];
+  const BASE_ORDER = [6,3,2,5,4,7,8,10,1,9]; // Phase 1 priority, used to break ties
+  const byD = Object.fromEntries(D.map(x=>[x.d,x]));
+  // Net = rev - cost, so ranking by net is the same as ranking by revenue at any cost.
+  const PRIORITY = [...BASE_ORDER].sort((a,b)=> (byD[b].rev-byD[a].rev) || (BASE_ORDER.indexOf(a)-BASE_ORDER.indexOf(b)));
+
+  const $ = id=>document.getElementById(id);
+  const r2 = v=>Math.round(v*100)/100;
+  const usd = (v,dp=2)=>(v<0?"−$":"$")+Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:dp,maximumFractionDigits:dp});
+  const usd0 = v=>usd(Math.round(v),0);
+  const int = v=>Math.round(v).toLocaleString("en-US");
+  const pct = v=>(v*100).toFixed(2)+"%";
+  const joinList = a=> a.length<=1 ? a.join("") : a.slice(0,-1).join(", ")+" and "+a[a.length-1];
+
+  const budgetEl=$("budget"), costEl=$("cost"), partialEl=$("partial");
+  let selected = 6;
+
+  /* ---------- Build static UI ---------- */
+  const tilesEl=$("tiles"), pickEl=$("pick");
+  D.forEach(x=>{
+    const t=document.createElement("button");
+    t.className="tile"; t.id="tile-"+x.d;
+    t.innerHTML=`<span class="chk" aria-hidden="true">✓</span><span class="tn">Decile</span><span class="tbig">${x.d}</span><span class="tnet"></span>`;
+    t.addEventListener("click",()=>{selected=x.d; render(); if(window.innerWidth<860) $("donor").scrollIntoView({behavior:"smooth",block:"start"});});
+    tilesEl.appendChild(t);
+    const p=document.createElement("button");
+    p.textContent=x.d; p.setAttribute("aria-label","Decile "+x.d);
+    p.addEventListener("click",()=>{selected=x.d; render();});
+    pickEl.appendChild(p);
+  });
+  $("tbl").innerHTML=`<thead><tr><th>Decile</th><th>Donors</th><th>Response rate</th><th>Avg gift</th><th>Exp. revenue/donor</th><th>Exp. net/donor at $0.68</th></tr></thead><tbody>`+
+    D.map(x=>`<tr><td>${x.d}</td><td>${int(x.n)}</td><td>${pct(x.rr)}</td><td>${usd(x.gift)}</td><td>${usd(x.rev)}</td><td>${usd(r2(x.rev-0.68))}</td></tr>`).join("")+`</tbody>`;
+
+  /* ---------- Optimizer ---------- */
+  function optimize(budget,cost,partial){
+    let left=budget; const plan={}; const log=[];
+    let donors=0,rev=0,resp=0;
+    for(const d of PRIORITY){
+      const x=byD[d], net=r2(x.rev-cost);
+      if(!(net>0)){ log.push({skip:true,t:`Decile ${d} skipped: expected net/donor of ${usd(net)} is not above $0 at ${usd(cost)} per piece.`}); continue; }
+      const full=x.n*cost;
+      if(full<=left+1e-6){
+        left-=full; plan[d]=x.n; donors+=x.n; rev+=x.n*x.rev; resp+=x.n*x.rr;
+        log.push({skip:false,t:`Decile ${d} mailed because expected net/donor of ${usd(net)} > $0 (${int(x.n)} donors, ${usd0(full)}).`});
+      } else if(partial && left>=cost){
+        const k=Math.floor((left+1e-6)/cost);
+        left-=k*cost; plan[d]=k; donors+=k; rev+=k*x.rev; resp+=k*x.rr;
+        log.push({skip:false,t:`Decile ${d} partly mailed: ${int(k)} of ${int(x.n)} donors with the leftover budget. Expected net/donor ${usd(net)} > $0.`});
+      } else {
+        log.push({skip:true,t:`Decile ${d} not mailed: worth mailing (${usd(net)}/donor) but needs ${usd0(full)} and only ${usd0(left)} is left.`});
+      }
+    }
+    const spent=donors*cost;
+    const profitable=PRIORITY.filter(d=>r2(byD[d].rev-cost)>0);
+    const needAll=profitable.reduce((s,d)=>s+byD[d].n*cost,0);
+    return {plan,log,donors,cost:spent,rev,net:rev-spent,resp,left,profitable,needAll};
+  }
+
+  /* ---------- Chart ---------- */
+  let chart=null;
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  function initChart(){
+    if(typeof Chart==="undefined"){
+      document.querySelector(".chart-box").innerHTML='<p class="chart-fallback">The chart library could not load. The tiles and results above still update live.</p>';
+      return;
+    }
+    Chart.defaults.font.family='"Public Sans",system-ui,sans-serif';
+    chart=new Chart($("chart"),{
+      type:"bar",
+      data:{labels:D.map(x=>"D"+x.d),datasets:[{data:D.map(()=>0),backgroundColor:[],borderRadius:4,borderSkipped:false,maxBarThickness:42}]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        animation:{duration:250},
+        plugins:{legend:{display:false},tooltip:{callbacks:{
+          title:i=>"Decile "+D[i[0].dataIndex].d,
+          label:i=>"Expected net/donor: "+usd(i.raw),
+          afterLabel:i=>{const d=D[i.dataIndex].d, k=lastPlan.plan[d]; return k?`Mailed: ${int(k)} donors`:"Not mailed";}
+        }}},
+        scales:{
+          x:{grid:{display:false},ticks:{color:css("--muted")}},
+          y:{suggestedMin:-0.1,suggestedMax:0.3,ticks:{color:css("--muted"),callback:v=>usd(v)},grid:{color:c=>c.tick.value===0?css("--ink"):css("--line"),lineWidth:c=>c.tick.value===0?1.5:1}}
+        }
+      }
+    });
+  }
+  function updateChart(cost,plan){
+    if(!chart) return;
+    const ds=chart.data.datasets[0];
+    ds.data=D.map(x=>r2(x.rev-cost));
+    ds.backgroundColor=D.map(x=>{const net=r2(x.rev-cost); if(plan[x.d]) return css("--good"); return net>0?css("--skip"):css("--red");});
+    chart.options.scales.x.ticks.color=css("--muted");
+    chart.options.scales.y.ticks.color=css("--muted");
+    chart.update();
+  }
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>render());
+
+  /* ---------- Render ---------- */
+  let lastPlan={plan:{}};
+  function setFill(el){const p=(el.value-el.min)/(el.max-el.min)*100; el.style.setProperty("--p",p+"%");}
+
+  function render(){
+    const budget=+budgetEl.value, cost=+costEl.value, partial=partialEl.checked;
+    setFill(budgetEl); setFill(costEl);
+    $("budget-val").textContent=usd0(budget);
+    $("cost-val").textContent=usd(cost);
+    const r=optimize(budget,cost,partial); lastPlan=r;
+
+    // Advice sentence
+    const mailedList=PRIORITY.filter(d=>r.plan[d]).map(d=> r.plan[d]<byD[d].n ? d+" (partly)" : String(d));
+    let adv, sub="";
+    if(!r.profitable.length){
+      adv=`At ${usd(cost)} per piece, no decile is expected to cover its cost, so don't mail.`;
+    } else if(budget===0){
+      adv=`Move the budget slider to plan a mailing. At ${usd(cost)} per piece, ${r.profitable.length} of 10 deciles are worth mailing.`;
+    } else if(!mailedList.length){
+      adv=`With ${usd0(budget)}, no full decile fits. The cheapest worth mailing needs ${usd0(Math.min(...r.profitable.map(d=>byD[d].n*cost)))}.`;
+      sub="Turn on partial deciles to mail part of one.";
+    } else {
+      adv=`With ${usd0(budget)}, mail decile${mailedList.length>1?"s":""} ${joinList(mailedList)} — reach ${int(r.donors)} donors for an expected net of ${usd0(r.net)}.`;
+      if(budget>=r.needAll-1e-6) sub=`Every profitable decile is mailed. Only ${usd0(Math.ceil(r.needAll))} is needed; extra budget won't raise expected net.`;
+      else if(r.left>=cost) sub=`${usd0(r.left)} is left unspent because the next decile worth mailing costs more than that.`;
+    }
+    $("advice").innerHTML=adv+(sub?`<small>${sub}</small>`:"");
+
+    // Tiles + picker
+    D.forEach(x=>{
+      const t=$("tile-"+x.d), net=r2(x.rev-cost), k=r.plan[x.d]||0;
+      t.classList.toggle("on",k===x.n);
+      t.classList.toggle("part",k>0&&k<x.n);
+      t.classList.toggle("loss",!(net>0));
+      t.classList.toggle("sel",x.d===selected);
+      t.querySelector(".tnet").textContent=usd(net);
+      t.setAttribute("aria-label",`Decile ${x.d}: ${k===x.n?"mailed":k>0?"partly mailed":"not mailed"}, expected net per donor ${usd(net)}. Check a donor in this decile.`);
+    });
+    [...pickEl.children].forEach((b,i)=>b.setAttribute("aria-pressed",String(i+1===selected)));
+
+    // Stats
+    const netEl=$("s-net"); netEl.textContent=usd0(r.net); netEl.classList.toggle("neg",r.net<0);
+    $("s-donors").textContent=int(r.donors);
+    $("s-resp").textContent=int(r.resp);
+    $("s-cost").textContent=usd0(r.cost);
+    $("s-rev").textContent=usd0(r.rev);
+    const used=budget?Math.min(100,r.cost/budget*100):0;
+    $("meter").style.width=used+"%";
+    $("meter-txt").textContent=budget?`${used.toFixed(0)}% of budget used (${usd0(r.cost)} of ${usd0(budget)})`:"No budget set";
+
+    // Logic
+    $("logic").innerHTML=r.log.map(l=>`<li class="${l.skip?"skip":""}">${l.t}</li>`).join("");
+
+    // Donor lookup
+    const x=byD[selected], net=r2(x.rev-cost), mail=net>0;
+    $("donor-out").innerHTML=`
+      <div class="verdict"><span class="badge ${mail?"mail":"nomail"}">${mail?"MAIL":"DON'T MAIL"}</span>
+      <p>${mail?`Expected revenue of ${usd(x.rev)} beats the ${usd(cost)} cost, so expected net/donor is ${usd(net)} > $0.`
+              :`Expected revenue of ${usd(x.rev)} doesn't beat the ${usd(cost)} cost, so expected net/donor is ${usd(net)}, not above $0.`}</p></div>
+      <dl class="stats">
+        <div class="stat"><dt>Response probability</dt><dd>${pct(x.rr)}</dd></div>
+        <div class="stat"><dt>Gift if they respond</dt><dd>${usd(x.gift)}</dd></div>
+        <div class="stat"><dt>Expected gift</dt><dd>${usd(x.rev)}</dd></div>
+        <div class="stat"><dt>Expected net per donor</dt><dd>${usd(net)}</dd></div>
+      </dl>
+      <p class="hint" style="margin-top:10px">Decile ${x.d} breaks even at ${usd(x.rev)} per piece. ${r.plan[x.d]?"It is in the current mailing plan.":mail?"It's worth mailing but isn't in the plan at this budget.":"It is left out of the plan."}</p>`;
+
+    updateChart(cost,r.plan);
+  }
+
+  // Smooth live updates: one render per animation frame while dragging
+  let queued=false;
+  const schedule=()=>{ if(queued) return; queued=true; requestAnimationFrame(()=>{queued=false; render();}); };
+  budgetEl.addEventListener("input",schedule);
+  costEl.addEventListener("input",schedule);
+  partialEl.addEventListener("change",render);
+
+  initChart();
+  render();
+})();
+</script>
+</body>
+</html>

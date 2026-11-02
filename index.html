@@ -292,12 +292,17 @@
     #heroCloudFront { z-index:2; }
     @media (max-width:700px){ #heroCloud, #heroCloudFront { opacity:.42; } }
     .hero-top {
-      display: grid; grid-template-columns: minmax(0,1fr);
+      display: grid; grid-template-columns: minmax(0,1.12fr) minmax(0,.88fr);
+      gap: 2rem;
       align-items: center; align-content: center;
       padding-top: 5rem; max-width: 1240px; width: 100%;
       position: relative; z-index: 1;
     }
     .hero-main { perspective: 900px; }
+    /* Reserves the column the pass hangs into. The pass itself is absolutely
+       positioned, so without this the text would spread across the full width
+       and the card would land on top of it. */
+    .hero-pass-slot { min-height: 430px; }
 
     .hero-dot {
       width: 8px; height: 8px; border-radius: 50%; background: var(--sage-d);
@@ -339,6 +344,143 @@
       transition: border-color 0.2s, color 0.2s, transform 0.25s ease;
     }
     .btn-outline:hover { transform: translateY(-3px); border-color: var(--lav-d); color: var(--ink); }
+
+    /* ── HERO PASS ────────────────────────────────────────────────────
+       An ID pass on a lanyard that drops in from above the top edge.
+       The strap is a rope solved with Verlet integration — fourteen
+       points with distance constraints — and the card is a two-point
+       rigid body hung off its end, so the tilt and the swing fall out
+       of the physics instead of being keyframed. The part of the strap
+       above the hero is clipped by #hero's overflow:hidden, which is
+       what sells "it came from up there". Inert under reduced motion. */
+    .pass-layer {
+      position: absolute; inset: 0; z-index: 3;
+      pointer-events: none;            /* only the card itself takes the pointer */
+    }
+    .pass-strap { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .pass-strap .webbing { fill: none; stroke: var(--lav-d); stroke-width: 13;
+      stroke-linecap: round; stroke-linejoin: round; opacity: 0.93; }
+    /* A dashed lighter line down the middle reads as woven tape. One stroke
+       cannot vary in width, so the weave is a second path over the first. */
+    .pass-strap .weave { fill: none; stroke: rgba(255,255,255,0.34); stroke-width: 2.6;
+      stroke-linecap: round; stroke-dasharray: 7 9; }
+
+    .pass {
+      --pass-w: 232px; --pass-h: 352px;
+      position: absolute; left: 0; top: 0; width: var(--pass-w);
+      transform-origin: 50% 0;         /* swings from the clip, not its middle */
+      perspective: 1100px;
+      pointer-events: auto; cursor: grab; touch-action: none;
+      -webkit-user-select: none; user-select: none;
+      will-change: transform;
+      /* Hidden until the script has measured the layout and placed it, so it
+         never flashes in the hero's top-left corner on the first paint. */
+      opacity: 0;
+    }
+    .pass.is-ready { opacity: 1; }
+    .pass.is-held { cursor: grabbing; }
+    .pass:focus-visible { outline: 2px solid var(--lav-d); outline-offset: 6px; border-radius: 18px; }
+
+    .pass-clip { height: 30px; display: grid; place-items: center; }
+    .pass-clip svg { width: 46px; height: 30px; display: block; }
+
+    /* Two nested 3D layers: the script writes the velocity lean to .pass-tilt
+       every frame, while .pass-card owns the flip and its transition. Sharing
+       one element would have the transition fighting the per-frame writes. */
+    .pass-tilt { transform-style: preserve-3d; }
+    .pass-card {
+      position: relative; height: var(--pass-h);
+      transform-style: preserve-3d;
+      transition: transform 0.75s cubic-bezier(0.2,0.8,0.2,1);
+    }
+    .pass.is-flipped .pass-card { transform: rotateY(180deg); }
+
+    .pass-face {
+      position: absolute; inset: 0;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      border-radius: 14px; overflow: hidden;
+      background: var(--white); border: 1px solid var(--line);
+      box-shadow: 0 22px 44px rgba(26,25,23,0.17), 0 2px 6px rgba(26,25,23,0.08);
+      display: flex; flex-direction: column;
+    }
+    .pass-back { transform: rotateY(180deg); }
+
+    .pass-band {
+      background: var(--lav-d); color: #fff;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.55rem;
+      letter-spacing: 0.17em; text-transform: uppercase;
+      padding: 0.5rem 0.8rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+    }
+    .pass-band i { font-style: normal; width: 14px; height: 10px; border-radius: 2px;
+      background: rgba(255,255,255,0.55); flex-shrink: 0; }
+
+    .pass-photo {
+      position: relative;
+      margin: 0.8rem 0.8rem 0.6rem; height: 196px; border-radius: 10px;
+      display: grid; place-items: center; overflow: hidden;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(83,64,168,0.26) 1px, transparent 1px) 0 0/13px 13px,
+        var(--lav);
+    }
+    .pass-photo span {
+      font-family: 'Cormorant Garamond', serif; font-size: 3.2rem; font-weight: 300;
+      line-height: 1; letter-spacing: 0.04em; color: var(--lav-d);
+    }
+    /* The file is already cropped to the frame's aspect; the slight upward
+       bias just protects her face if a breakpoint's box is wider. */
+    .pass-photo img {
+      position: absolute; inset: 0; display: block;
+      width: 100%; height: 100%; object-fit: cover; object-position: 50% 38%;
+    }
+
+    .pass-id { padding: 0 0.9rem 0.9rem; }
+    .pass-name {
+      font-family: 'Cormorant Garamond', serif; font-weight: 400;
+      font-size: 1.6rem; line-height: 1.05; color: var(--ink);
+    }
+    .pass-role, .pass-place {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.57rem;
+      letter-spacing: 0.15em; text-transform: uppercase;
+    }
+    .pass-role  { color: var(--ink); margin-top: 0.4rem; }
+    .pass-place { color: var(--muted); margin-top: 0.3rem; }
+
+    .pass-body { padding: 0.95rem 0.9rem; display: flex; flex-direction: column; gap: 0.72rem; }
+    .pass-row b { display: block; font-weight: 400;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.5rem;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.2rem; }
+    .pass-row span { display: block; font-size: 0.78rem; line-height: 1.35;
+      color: var(--ink); overflow-wrap: anywhere; }
+
+    @media (max-width: 1100px) {
+      .pass { --pass-w: 198px; --pass-h: 302px; }
+      .pass-photo { height: 164px; }
+      .pass-photo span { font-size: 2.7rem; }
+      .pass-name { font-size: 1.32rem; }
+      .hero-pass-slot { min-height: 380px; }
+    }
+    /* Single column below 900px. The slot moves above the headline so the
+       strap still falls from the top edge instead of crossing the name. */
+    @media (max-width: 900px) {
+      .hero-top { grid-template-columns: minmax(0,1fr); gap: 0; }
+      /* Headroom for the swing: a tilted card's bounding box is taller than
+         the card, and without the margin it grazes the headline. */
+      .hero-pass-slot { order: -1; min-height: 320px; width: 100%; }
+      /* pan-y, not none: the pass sits above the headline on a phone, and a
+         thumb swiping up over it has to scroll the page. Sideways drags
+         still reach the card. */
+      .pass { --pass-w: 168px; --pass-h: 256px; touch-action: pan-y; }
+      .pass-photo { height: 142px; margin: 0.55rem 0.55rem 0.45rem; }
+      .pass-photo span { font-size: 2.2rem; }
+      .pass-name { font-size: 1.1rem; padding: 0 0.65rem; }
+      .pass-id { padding: 0 0.65rem 0.65rem; }
+      .pass-role, .pass-place { font-size: 0.48rem; }
+      .pass-band { font-size: 0.48rem; padding: 0.4rem 0.6rem; }
+      .pass-body { padding: 0.7rem 0.65rem; gap: 0.5rem; }
+      .pass-row span { font-size: 0.7rem; }
+    }
 
     /* ── SHARED ── */
     section { padding: 4rem 5rem; }
@@ -537,6 +679,7 @@
     .t-blush { border-top-color: var(--blush-d); }
     .t-gold  { border-top-color: var(--gold-d); }
     .t-lav   { border-top-color: var(--lav-d); }
+    .t-sage  { border-top-color: var(--sage-d); }
     .proj-tile-cover {
       aspect-ratio: 16/9; overflow: hidden; background: var(--bg);
       border-bottom: 1px solid var(--line); display: block;
@@ -744,7 +887,9 @@
       nav { padding: 1rem 1.5rem; }
       .nav-links { display: none; }
       .nav-burger { display: flex; }
-      #hero { padding: 0 1.5rem; }
+      /* The stacked pass makes the hero taller than its content used to be,
+         so it grows past 88vh instead of being clipped by it. */
+      #hero { padding: 0 1.5rem 3.5rem; min-height: 0; }
       section { padding: 4rem 1.5rem; }
       #strengths { padding: 3rem 1.5rem; }
       #contact { padding: 5rem 1.5rem; }
@@ -796,6 +941,10 @@
     <style>
       .reveal { opacity: 1 !important; transform: none !important; }
       .nav-burger { display: none !important; }
+      /* The pass is placed entirely by script — without JS there is nothing
+         to show, so take back the column it reserves too. */
+      .pass-layer, .hero-pass-slot { display: none !important; }
+      .hero-top { grid-template-columns: minmax(0,1fr) !important; }
     </style>
   </noscript>
 </head>
@@ -863,6 +1012,61 @@
         </div>
       </div>
 
+      <div class="hero-pass-slot" aria-hidden="true"></div>
+    </div>
+
+    <!-- The pass. Its position is written by script in hero-local pixels; the
+         strap runs off the top edge, where #hero's overflow:hidden cuts it. -->
+    <div class="pass-layer" id="passLayer">
+      <svg class="pass-strap" id="passStrap" aria-hidden="true" focusable="false">
+        <path class="webbing" id="strapWebbing" d=""/>
+        <path class="weave"   id="strapWeave"   d=""/>
+      </svg>
+
+      <div class="pass" id="pass" role="button" tabindex="0" aria-pressed="false"
+           aria-label="Aditi Shelke's pass. Activate to turn it over.">
+        <div class="pass-clip" aria-hidden="true">
+          <svg viewBox="0 0 46 30" focusable="false">
+            <rect x="15" y="0" width="16" height="12" rx="3" fill="#9d9b92"/>
+            <rect x="18" y="2.5" width="10" height="7" rx="2" fill="#f4f2ec"/>
+            <rect x="6" y="10" width="34" height="18" rx="5" fill="#b9b7ae"/>
+            <rect x="9" y="13" width="28" height="4" rx="2" fill="#e4e2da"/>
+            <rect x="16" y="19" width="14" height="5" rx="2.5" fill="#f4f2ec"/>
+          </svg>
+        </div>
+
+        <div class="pass-tilt" id="passTilt">
+          <div class="pass-card">
+
+            <div class="pass-face pass-front" id="passFront">
+              <div class="pass-band"><span>Business Analytics</span><i></i></div>
+              <!-- The monogram is the fallback. If the photo file is present
+                   it covers it; if it 404s the script drops the <img> and the
+                   monogram shows through, so the card is never broken. -->
+              <div class="pass-photo">
+                <span>AS</span>
+                <img id="passPhoto" src="files/aditi_badge.jpg" alt=""/>
+              </div>
+              <div class="pass-id">
+                <div class="pass-name">Aditi Shelke</div>
+                <div class="pass-role">Business Analyst</div>
+                <div class="pass-place">United States</div>
+              </div>
+            </div>
+
+            <div class="pass-face pass-back" id="passBack" aria-hidden="true">
+              <div class="pass-band"><span>Access · All areas</span><i></i></div>
+              <div class="pass-body">
+                <div class="pass-row"><b>Studying</b><span>MS Business Analytics, Northeastern University</span></div>
+                <div class="pass-row"><b>Works in</b><span>Python · SQL · R · Tableau · Power BI · Slack</span></div>
+                <div class="pass-row"><b>Reach me</b><span>adishelke2000@gmail.com</span></div>
+                <div class="pass-row"><b>Based in</b><span>United States · open to analyst roles</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1157,8 +1361,8 @@
     </div>
 
     <div class="proj-filter reveal" id="projFilter" role="group" aria-label="Filter projects by area">
-      <button type="button" data-f="all"         class="on">All <i>15</i></button>
-      <button type="button" data-f="interactive">Interactive <i>7</i></button>
+      <button type="button" data-f="all"         class="on">All <i>14</i></button>
+      <button type="button" data-f="interactive">Interactive <i>8</i></button>
       <button type="button" data-f="finance">Finance &amp; risk <i>3</i></button>
       <button type="button" data-f="growth">Sales &amp; marketing <i>4</i></button>
       <button type="button" data-f="ops">Operations &amp; people <i>4</i></button>
@@ -1293,6 +1497,19 @@
 
     <div class="proj-group-label reveal">Analysis &amp; Modelling <span>· statistical modeling, ML &amp; market analysis</span></div>
     <div class="proj-tiles reveal">
+
+      <article data-tags="growth interactive strategy" class="proj-tile plain t-sage">
+        <div class="proj-tile-body">
+          <div class="proj-tile-cat">Project · Model → Optimize → Simulate → Deploy</div>
+          <h3 class="proj-tile-title"><a href="files/pva_mailing_advisor.html" target="_blank" rel="noopener noreferrer">Who Should We Mail?</a></h3>
+          <div class="proj-tile-desc">95,412 lapsed donors, a 5% response rate, 68&cent; a letter. Logistic regression ranks them, Solver spends a $30,000 budget on deciles 2, 3, 5 and 6, and 10,000 Monte&nbsp;Carlo trials put an 11% chance of loss behind the ~$7,000 answer. The advisor hands all of it to a fundraiser with two sliders.</div>
+          <div class="proj-actions">
+            <a class="proj-link" href="files/pva_mailing_advisor.html" target="_blank" rel="noopener noreferrer">Open the advisor →</a>
+            <a class="proj-link sub" href="files/PVA_Phase2_Report.docx">Full report ↓</a>
+            <a class="proj-link sub" href="files/PVA_Phase2_Deck.pptx">Deck ↓</a>
+          </div>
+        </div>
+      </article>
 
       <article data-tags="finance" class="proj-tile plain t-lav">
         <div class="proj-tile-body">
@@ -2134,6 +2351,309 @@
      after the short titles. */
   cycler(document.getElementById('contactRole'), ROLES, 2200);
 
+})();
+</script>
+
+<script>
+/* ── The hero pass ────────────────────────────────────────────────────
+   A lanyard solved with Verlet integration. The strap is N point masses
+   chained by distance constraints; the card hangs off the last one as a
+   two-point rigid body (A at the clip, B at its bottom edge), so the
+   card's tilt is the angle of A→B rather than something keyframed.
+
+   Entry: the anchor starts far above the hero with the strap already at
+   rest length, so the whole assembly sits off-screen, then eases down
+   into place. The card lags behind it, overshoots and swings itself out
+   — that is the "falls from above" everyone remembers, and unlike
+   starting from a collapsed rope it can never blow up the solver.    */
+(function heroPass(){
+  var hero  = document.getElementById('hero');
+  var layer = document.getElementById('passLayer');
+  var pass  = document.getElementById('pass');
+  var tilt  = document.getElementById('passTilt');
+  var svg   = document.getElementById('passStrap');
+  var web   = document.getElementById('strapWebbing');
+  var weave = document.getElementById('strapWeave');
+  var slot  = document.querySelector('.hero-pass-slot');
+  var front = document.getElementById('passFront');
+  var back  = document.getElementById('passBack');
+  if (!hero || !layer || !pass || !tilt || !svg || !web || !slot) return;
+
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* No photo file yet, or a typo in its name, should leave the monogram
+     showing rather than a broken-image icon on the front of the card. */
+  var photo = document.getElementById('passPhoto');
+  if (photo){
+    var dropPhoto = function(){ if (photo.parentNode) photo.remove(); };
+    photo.addEventListener('error', dropPhoto);
+    /* The request can fail before this script is parsed, in which case the
+       error event has already been and gone — so check the decoded size too. */
+    addEventListener('load', function(){
+      if (photo.complete && photo.naturalWidth === 0) dropPhoto();
+    });
+  }
+
+  var N    = 14;      /* strap points. More is smoother and no more stable. */
+  var ITER = 12;      /* constraint relaxation passes — below ~8 it sags.   */
+  var GRAV = 0.62;
+  var DAMP = 0.992;
+  /* The card's bottom point gets its own, much heavier damping. A flat card
+     has real air resistance — without this a hard flick sends it over the
+     top and it windmills on the strap instead of fluttering and stopping. */
+  var DAMP_B = 0.955;
+  var VMAX = 26;      /* px per frame. A long drag released in one frame can
+                         otherwise hand the solver a 200px step. */
+  var CARD_W = 0.55;  /* inverse mass of the card's two points. Lighter than
+                         the strap, so the strap leads and the card trails. */
+
+  var W = 0, H = 0, passW = 0, passH = 0, ropeLen = 0, segLen = 0;
+  var pts = [], A = null, B = null;
+  var anchor = { x: 0, y: 0 }, rest = { x: 0, y: 0 };
+  var entry = 0, ENTRY_MS = 880, entryFrom = 0, entryAt = 0;
+  var dragging = false, drag = { x: 0, y: 0 }, grab = { x: 0, y: 0 };
+  var downX = 0, downY = 0, travel = 0;
+  var lean = 0, raf = 0, idle = 0, placed = false;
+  var last = { ax: 0, ay: 0, bx: 0, by: 0 };
+
+  function measure(){
+    var hr = hero.getBoundingClientRect();
+    var sr = slot.getBoundingClientRect();
+    W = hr.width; H = hr.height;
+    passW = pass.offsetWidth; passH = pass.offsetHeight;
+
+    rest.x = (sr.left - hr.left) + sr.width / 2;
+    /* Above the hero's top edge, so the strap is already running when it
+       enters the frame rather than beginning at a visible loose end. */
+    rest.y = -Math.round(passH * 0.16);
+
+    /* Length chosen so the card lands centred in the column it was given,
+       which keeps it put as the viewport height changes. */
+    var want = (sr.top - hr.top) + sr.height / 2 - passH / 2;
+    ropeLen = Math.max(90, want - rest.y);
+    segLen  = ropeLen / (N - 1);
+
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  }
+
+  function hang(from){
+    anchor.x = rest.x; anchor.y = from;
+    pts.length = 0;
+    for (var i = 0; i < N; i++){
+      var y = from + i * segLen;
+      pts.push({ x: rest.x, y: y, px: rest.x, py: y, w: 1 });
+    }
+    pts[0].w = 0;
+    A = pts[N - 1]; A.w = CARD_W;
+    var by = A.y + passH;
+    B = { x: rest.x, y: by, px: rest.x, py: by, w: CARD_W };
+  }
+
+  function verlet(p, damp){
+    if (p.w === 0){ p.px = p.x; p.py = p.y; return; }
+    var vx = (p.x - p.px) * damp, vy = (p.y - p.py) * damp;
+    /* A background tab, a slow frame or a fast drag can hand us a step big
+       enough to turn the constraint solve into a catapult. Cap it. */
+    if (vx >  VMAX) vx =  VMAX; else if (vx < -VMAX) vx = -VMAX;
+    if (vy >  VMAX) vy =  VMAX; else if (vy < -VMAX) vy = -VMAX;
+    p.px = p.x; p.py = p.y;
+    p.x += vx; p.y += vy + GRAV;
+  }
+
+  function link(a, b, len){
+    var dx = b.x - a.x, dy = b.y - a.y;
+    var d = Math.sqrt(dx * dx + dy * dy);
+    if (d < 1e-5) return;
+    var t = a.w + b.w; if (t === 0) return;
+    var k = (d - len) / d;
+    a.x += dx * k * (a.w / t); a.y += dy * k * (a.w / t);
+    b.x -= dx * k * (b.w / t); b.y -= dy * k * (b.w / t);
+  }
+
+  function solve(){
+    for (var it = 0; it < ITER; it++){
+      for (var i = 0; i < N - 1; i++) link(pts[i], pts[i + 1], segLen);
+      link(A, B, passH);
+      /* Pins last so they always win, whatever the chain just did. */
+      pts[0].x = anchor.x; pts[0].y = anchor.y;
+      if (dragging){ A.x = drag.x; A.y = drag.y; }
+    }
+  }
+
+  function render(){
+    /* Midpoint-quadratic through the points: a polyline would show every
+       joint as a kink once the strap swings. */
+    var d = 'M' + pts[0].x.toFixed(1) + ' ' + pts[0].y.toFixed(1);
+    for (var i = 1; i < N - 1; i++){
+      d += ' Q' + pts[i].x.toFixed(1) + ' ' + pts[i].y.toFixed(1) +
+           ' '  + ((pts[i].x + pts[i + 1].x) / 2).toFixed(1) +
+           ' '  + ((pts[i].y + pts[i + 1].y) / 2).toFixed(1);
+    }
+    d += ' L' + A.x.toFixed(1) + ' ' + A.y.toFixed(1);
+    web.setAttribute('d', d); weave.setAttribute('d', d);
+
+    /* The rotation that points the card's local +Y down the A→B vector.
+       rotate(t) sends (0,1) to (-sin t, cos t), so t = atan2(-dx, dy). */
+    var deg = Math.atan2(-(B.x - A.x), (B.y - A.y)) * 180 / Math.PI;
+    pass.style.transform =
+      'translate3d(' + (A.x - passW / 2).toFixed(1) + 'px,' + A.y.toFixed(1) + 'px,0)' +
+      ' rotate(' + deg.toFixed(2) + 'deg)';
+
+    /* A little yaw in the direction of travel. Eased, or it jitters. */
+    var target = Math.max(-26, Math.min(26, (A.x - A.px) * 2.1));
+    lean += (target - lean) * 0.13;
+    tilt.style.transform = 'rotateY(' + lean.toFixed(2) + 'deg)';
+
+    if (!placed){ pass.classList.add('is-ready'); placed = true; }
+  }
+
+  function step(){
+    raf = 0;
+
+    if (entry < 1){
+      /* entryAt is a little in the future, so clamp the low end too — a
+         negative t would drive the easing backwards and launch the anchor. */
+      entry = Math.max(0, Math.min(1, (performance.now() - entryAt) / ENTRY_MS));
+      var e = 1 - Math.pow(1 - entry, 3);
+      anchor.y = entryFrom + (rest.y - entryFrom) * e;
+      /* A sideways drift that unwinds as it lands, so it swings in on an
+         arc instead of dropping down a plumb line. */
+      anchor.x = rest.x + 30 * (1 - e) * Math.cos(entry * 3.1);
+    } else {
+      anchor.x = rest.x; anchor.y = rest.y;
+    }
+
+    for (var i = 1; i < N; i++) verlet(pts[i], DAMP);
+    verlet(B, DAMP_B);
+    if (dragging){ A.x = drag.x; A.y = drag.y; }
+    solve();
+    render();
+
+    /* Sleep once it has genuinely settled, rather than burning a frame a
+       second for the rest of the session. Any input wakes it again. */
+    var moved = Math.abs(A.x - last.ax) + Math.abs(A.y - last.ay) +
+                Math.abs(B.x - last.bx) + Math.abs(B.y - last.by);
+    last.ax = A.x; last.ay = A.y; last.bx = B.x; last.by = B.y;
+    idle = (!dragging && entry >= 1 && moved < 0.06) ? idle + 1 : 0;
+    if (idle < 45) raf = requestAnimationFrame(step);
+  }
+
+  /* Guarded on A: the observers below are wired up during parse, so they can
+     fire before start() has built the chain. */
+  function wake(){ idle = 0; if (A && !raf && !reduce) raf = requestAnimationFrame(step); }
+  function sleep(){ if (raf){ cancelAnimationFrame(raf); raf = 0; } }
+
+  /* ── Static placement, for reduced motion and as the pre-drop state ── */
+  function settle(){
+    measure();
+    hang(rest.y);
+    anchor.x = rest.x; anchor.y = rest.y;
+    render();
+  }
+
+  /* ── Flip ── */
+  function flip(){
+    var now = !pass.classList.contains('is-flipped');
+    pass.classList.toggle('is-flipped', now);
+    pass.setAttribute('aria-pressed', now ? 'true' : 'false');
+    /* Keep the face that is turned away out of the accessibility tree —
+       backface-visibility hides it from eyes, not from screen readers. */
+    if (front) front.setAttribute('aria-hidden', now ? 'true' : 'false');
+    if (back)  back.setAttribute('aria-hidden',  now ? 'false' : 'true');
+  }
+
+  /* ── Drag ── */
+  pass.addEventListener('pointerdown', function(ev){
+    if (reduce || !A) return;
+    downX = ev.clientX; downY = ev.clientY; travel = 0;
+    var hr = hero.getBoundingClientRect();
+    grab.x = A.x - (ev.clientX - hr.left);
+    grab.y = A.y - (ev.clientY - hr.top);
+    drag.x = A.x; drag.y = A.y;
+    dragging = true; A.w = 0;
+    pass.classList.add('is-held');
+    try { pass.setPointerCapture(ev.pointerId); } catch(e){}
+    ev.preventDefault();
+    wake();
+  });
+
+  /* On window rather than on the card: pointer capture retargets the events
+     to the card but they still bubble here, so this works whether or not
+     setPointerCapture took. */
+  addEventListener('pointermove', function(ev){
+    if (!dragging) return;
+    var hr = hero.getBoundingClientRect();
+    var tx = ev.clientX - hr.left + grab.x;
+    var ty = ev.clientY - hr.top  + grab.y;
+    /* Let it stretch a little, then stop — otherwise the strap turns into
+       a straight line across the page when someone drags to the corner. */
+    var dx = tx - anchor.x, dy = ty - anchor.y;
+    var d = Math.sqrt(dx * dx + dy * dy), max = ropeLen * 1.22;
+    if (d > max){ tx = anchor.x + dx / d * max; ty = anchor.y + dy / d * max; }
+    drag.x = tx; drag.y = ty;
+    travel = Math.max(travel, Math.abs(ev.clientX - downX) + Math.abs(ev.clientY - downY));
+  });
+
+  function release(ev, wasTap){
+    if (!dragging) return;
+    dragging = false; A.w = CARD_W;
+    pass.classList.remove('is-held');
+    try { pass.releasePointerCapture(ev.pointerId); } catch(e){}
+    /* A press that never moved was a click, not a throw. A cancel is never
+       one: on a phone the browser cancels the pointer the moment it decides
+       the gesture is a scroll, and treating that as a tap would flip the
+       card every time someone swiped up over it. */
+    if (wasTap && travel < 6) flip();
+    wake();
+  }
+  addEventListener('pointerup',     function(ev){ release(ev, true);  });
+  addEventListener('pointercancel', function(ev){ release(ev, false); });
+
+  pass.addEventListener('keydown', function(ev){
+    if (ev.key !== 'Enter' && ev.key !== ' ' && ev.key !== 'Spacebar') return;
+    ev.preventDefault();
+    flip();
+    if (!reduce && A){ A.px = A.x + 7; wake(); }   /* nudge it, so it answers back */
+  });
+
+  /* ── Lifecycle ── */
+  if (reduce){
+    settle();
+    addEventListener('load', settle);     /* again once the layout is final */
+    addEventListener('resize', settle);
+    return;
+  }
+
+  function start(){
+    measure();
+    /* Far enough up that the card clears the top edge before it moves. */
+    entryFrom = rest.y - (ropeLen + passH + 70);
+    hang(entryFrom);
+    entry = 0; entryAt = performance.now() + 260;   /* let the hero text land first */
+    render();
+    wake();
+  }
+
+  /* Only run while the hero is actually on screen. */
+  if ('IntersectionObserver' in window){
+    new IntersectionObserver(function(es){
+      if (es[0].isIntersecting) wake(); else sleep();
+    }, { threshold: 0 }).observe(hero);
+  }
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) sleep(); else wake();
+  });
+
+  /* Re-measure after a resize and let the simulation carry the card to the
+     column's new position, so it swings across instead of teleporting. */
+  var rt = null;
+  addEventListener('resize', function(){
+    clearTimeout(rt);
+    rt = setTimeout(function(){ if (!A) return; measure(); wake(); }, 140);
+  });
+
+  if (document.readyState === 'complete') start();
+  else addEventListener('load', start);
 })();
 </script>
 </body>
