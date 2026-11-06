@@ -935,6 +935,42 @@
       .proj-tile,.proj-tile .proj-tile-cover,.proj-tile .proj-tile-body{transform:none!important}
     }
 
+    /* ── FIGURES ────────────────────────────────────────────────────────
+       The scale of the work, above the grid. auto-fit rather than a fixed
+       column count, so five items reflow to three-and-two and then to one
+       without a breakpoint for each step. */
+    .figures {
+      display: grid; gap: 1px;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      background: var(--line);
+      border: 1px solid var(--line); border-radius: 14px;
+      overflow: hidden; margin: 2rem 0 1.6rem;
+    }
+    .fig { background: var(--bg); padding: 1.3rem 1.25rem 1.15rem; }
+    .fig-num {
+      font-family: 'Cormorant Garamond', serif; font-weight: 400;
+      font-size: 2.3rem; line-height: 1; color: var(--ink);
+      /* Tabular figures: without them the digits change width as the number
+         counts up and the whole row jitters. */
+      font-variant-numeric: tabular-nums;
+    }
+    .fig-label {
+      margin: 0.55rem 0 0;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.63rem;
+      letter-spacing: 0.07em; line-height: 1.5; color: var(--muted-2);
+      text-transform: uppercase;
+    }
+    .fig-label span {
+      display: block; margin-top: 0.35rem;
+      color: var(--lav-d); text-transform: none; letter-spacing: 0.04em;
+      font-size: 0.62rem;
+    }
+    @media (max-width: 600px) {
+      .figures { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+      .fig { padding: 1.05rem 1rem; }
+      .fig-num { font-size: 1.95rem; }
+    }
+
     /* ── CURSOR ─────────────────────────────────────────────────────────
        A dot that tracks the pointer exactly and a ring that lags behind it,
        which is what reads as "flow" — the gap between the two opens when you
@@ -1414,6 +1450,32 @@
       <div class="sec-label">// 04 · Work</div>
       <h2 class="sec-title">Eight dashboards.<br/>Seven that go deeper.</h2>
     </div>
+
+    <!-- The scale of the work, stated before the grid. Every figure below is
+         traceable to one project; none of them is a client outcome, and the
+         labels say what each number actually counts. -->
+    <dl class="figures reveal" id="figures">
+      <div class="fig">
+        <dt class="fig-num" data-to="95412">95,412</dt>
+        <dd class="fig-label">donor records ranked and priced<span>Who Should We Mail?</span></dd>
+      </div>
+      <div class="fig">
+        <dt class="fig-num" data-to="74111">74,111</dt>
+        <dd class="fig-label">listings behind one pricing study<span>Escape Routes</span></dd>
+      </div>
+      <div class="fig">
+        <dt class="fig-num" data-to="10000">10,000</dt>
+        <dd class="fig-label">Monte Carlo trials run<span>Who Should We Mail?</span></dd>
+      </div>
+      <div class="fig">
+        <dt class="fig-num" data-to="0.42" data-dp="2">0.42</dt>
+        <dd class="fig-label">KS on a scorecard of 1,000 loans<span>Credit Default Scorecard</span></dd>
+      </div>
+      <div class="fig">
+        <dt class="fig-num" data-to="16">16</dt>
+        <dd class="fig-label">projects here &middot; eight you can drive<span>all of it below</span></dd>
+      </div>
+    </dl>
 
     <div class="proj-filter reveal" id="projFilter" role="group" aria-label="Filter projects by area">
       <button type="button" data-f="all"         class="on">All <i>16</i></button>
@@ -2736,6 +2798,56 @@
 
   if (document.readyState === 'complete') start();
   else addEventListener('load', start);
+})();
+</script>
+
+<script>
+/* Count the figures up the first time they come into view.
+   The final values are already in the HTML, so with JS off, under reduced
+   motion, or if this throws, the correct numbers are simply there. */
+(function figures(){
+  var wrap = document.getElementById('figures');
+  if (!wrap) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!('IntersectionObserver' in window)) return;
+
+  var nums = [].slice.call(wrap.querySelectorAll('.fig-num'));
+  if (!nums.length) return;
+
+  function fmt(v, dp){
+    return dp ? v.toFixed(dp)
+              : Math.round(v).toLocaleString('en-US');
+  }
+
+  function run(el){
+    var to = parseFloat(el.getAttribute('data-to'));
+    var dp = parseInt(el.getAttribute('data-dp') || '0', 10);
+    if (!isFinite(to)) return;
+    var final = el.textContent;          // keep the markup's own formatting
+    var t0 = null, DUR = 1100;
+
+    function frame(now){
+      if (t0 === null) t0 = now;
+      var p = Math.min(1, (now - t0) / DUR);
+      /* Ease out hard: most of the distance is covered early, so it reads as
+         settling on a figure rather than ticking up like an odometer. */
+      var e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(to * e, dp);
+      if (p < 1) requestAnimationFrame(frame);
+      else el.textContent = final;       // land on the exact original string
+    }
+    el.textContent = fmt(0, dp);
+    requestAnimationFrame(frame);
+  }
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      io.unobserve(en.target);           // once only
+      run(en.target);
+    });
+  }, { threshold: 0.6 });
+  nums.forEach(function(n){ io.observe(n); });
 })();
 </script>
 
