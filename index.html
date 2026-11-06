@@ -934,6 +934,61 @@
       .proj-tiles{perspective:none}
       .proj-tile,.proj-tile .proj-tile-cover,.proj-tile .proj-tile-body{transform:none!important}
     }
+
+    /* ── CURSOR ─────────────────────────────────────────────────────────
+       A dot that tracks the pointer exactly and a ring that lags behind it,
+       which is what reads as "flow" — the gap between the two opens when you
+       move fast and closes when you stop.
+
+       The native cursor is hidden only by .has-cursor, which the script adds
+       after it has built both elements. Without JS, on a touch screen, or
+       under reduced motion, the class never lands and the ordinary cursor
+       stays — there is no state where the pointer is invisible. */
+    .cursor-dot, .cursor-ring {
+      position: fixed; top: 0; left: 0; z-index: 300;
+      pointer-events: none; border-radius: 50%;
+      opacity: 0; transition: opacity .25s;
+      will-change: transform;
+    }
+    .cursor-dot  { width: 6px;  height: 6px;  margin: -3px 0 0 -3px;  background: var(--lav-d); }
+    .cursor-ring { width: 34px; height: 34px; margin: -17px 0 0 -17px;
+      border: 1.5px solid var(--lav-d);
+      transition: opacity .25s, width .22s, height .22s, margin .22s,
+                  border-color .22s, background-color .22s; }
+    body.has-cursor { cursor: none; }
+    body.has-cursor a, body.has-cursor button,
+    body.has-cursor .pass, body.has-cursor [role="button"] { cursor: none; }
+    body.has-cursor .cursor-dot, body.has-cursor .cursor-ring { opacity: 1; }
+
+    /* Over something clickable the ring opens up and fills faintly, so the
+       cursor itself tells you the thing under it is live. */
+    body.has-cursor.cursor-hot .cursor-ring {
+      width: 54px; height: 54px; margin: -27px 0 0 -27px;
+      background: color-mix(in srgb, var(--lav-d) 12%, transparent);
+    }
+    body.has-cursor.cursor-hot .cursor-dot { opacity: 0; }
+    body.has-cursor.cursor-down .cursor-ring { width: 26px; height: 26px; margin: -13px 0 0 -13px; }
+
+    /* The glow is dark-theme only. On the cream background a soft violet pool
+       just looks like a smudge; against #131210 it reads as light. */
+    .cursor-glow { display: none; }
+    html[data-theme="dark"] body.has-cursor .cursor-glow {
+      display: block; position: fixed; top: 0; left: 0; z-index: 299;
+      width: 260px; height: 260px; margin: -130px 0 0 -130px;
+      border-radius: 50%; pointer-events: none; opacity: .5;
+      background: radial-gradient(circle, rgba(171,157,247,0.16) 0%, transparent 68%);
+      will-change: transform;
+    }
+
+    /* A fine pointer only. Hiding the cursor on a touch screen would do
+       nothing useful, and a trailing ring with no pointer to trail is noise. */
+    @media (pointer: coarse), (prefers-reduced-motion: reduce) {
+      .cursor-dot, .cursor-ring, .cursor-glow { display: none !important; }
+      body.has-cursor, body.has-cursor a, body.has-cursor button,
+      body.has-cursor .pass, body.has-cursor [role="button"] { cursor: auto; }
+      body.has-cursor a, body.has-cursor button, body.has-cursor [role="button"] { cursor: pointer; }
+      body.has-cursor .pass { cursor: grab; }
+    }
 </style>
 
   <!-- If JS is blocked or fails, show all content instead of a blank page -->
@@ -2681,6 +2736,88 @@
 
   if (document.readyState === 'complete') start();
   else addEventListener('load', start);
+})();
+</script>
+
+<script>
+/* The cursor. A dot pinned to the pointer, a ring easing toward it, and in
+   dark mode a soft pool of light behind both. */
+(function cursor(){
+  if (!matchMedia('(pointer: fine)').matches) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var dot  = document.createElement('div'); dot.className  = 'cursor-dot';
+  var ring = document.createElement('div'); ring.className = 'cursor-ring';
+  var glow = document.createElement('div'); glow.className = 'cursor-glow';
+  [dot, ring, glow].forEach(function(el){ el.setAttribute('aria-hidden','true'); });
+  document.body.appendChild(glow);
+  document.body.appendChild(ring);
+  document.body.appendChild(dot);
+  document.body.classList.add('has-cursor');
+
+  var HOT = 'a,button,[role="button"],input,textarea,select,summary,.pass,label[for]';
+  var tx = innerWidth / 2, ty = innerHeight / 2;   // where the pointer is
+  var rx = tx, ry = ty;                            // where the ring is
+  var gx = tx, gy = ty;                            // where the glow is
+  var raf = null, seen = false;
+
+  function place(el, x, y){ el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)'; }
+
+  function step(){
+    /* Two different rates: the ring is close behind, the glow drifts well
+       back, so fast movement pulls the three apart and stopping gathers
+       them again. */
+    rx += (tx - rx) * 0.20;  ry += (ty - ry) * 0.20;
+    gx += (tx - gx) * 0.085; gy += (ty - gy) * 0.085;
+    place(ring, rx, ry);
+    place(glow, gx, gy);
+
+    /* Stop once everything has caught up. A pointermove restarts it, so the
+       page is not running a frame loop while the cursor sits still. */
+    if (Math.abs(tx - rx) < 0.1 && Math.abs(ty - ry) < 0.1 &&
+        Math.abs(tx - gx) < 0.1 && Math.abs(ty - gy) < 0.1){
+      rx = gx = tx; ry = gy = ty;
+      place(ring, rx, ry); place(glow, gx, gy);
+      raf = null; return;
+    }
+    raf = requestAnimationFrame(step);
+  }
+  function wake(){ if (!raf) raf = requestAnimationFrame(step); }
+
+  addEventListener('pointermove', function(ev){
+    if (ev.pointerType !== 'mouse') return;
+    tx = ev.clientX; ty = ev.clientY;
+    place(dot, tx, ty);
+    if (!seen){                       // jump everything to the first real
+      seen = true;                    // position instead of flying in from
+      rx = gx = tx; ry = gy = ty;     // the middle of the screen
+      place(ring, rx, ry); place(glow, gx, gy);
+    }
+    document.body.classList.toggle('cursor-hot',
+      !!(ev.target && ev.target.closest && ev.target.closest(HOT)));
+    wake();
+  }, {passive:true});
+
+  addEventListener('pointerdown', function(){ document.body.classList.add('cursor-down'); });
+  addEventListener('pointerup',   function(){ document.body.classList.remove('cursor-down'); });
+
+  /* Off the window entirely — fade out, so the ring is not parked against an
+     edge while the real pointer is in another application. */
+  document.addEventListener('mouseleave', function(){ document.body.classList.remove('has-cursor'); });
+  document.addEventListener('mouseenter', function(){ document.body.classList.add('has-cursor'); });
+
+  /* A plugged-in mouse can disappear, and the motion preference can change
+     while the page is open. Either way, give the real cursor back. */
+  ['(pointer: fine)','(prefers-reduced-motion: reduce)'].forEach(function(q){
+    var mq = matchMedia(q);
+    var onChange = function(){
+      var ok = matchMedia('(pointer: fine)').matches &&
+               !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      document.body.classList.toggle('has-cursor', ok);
+      if (!ok && raf){ cancelAnimationFrame(raf); raf = null; }
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+  });
 })();
 </script>
 </body>
