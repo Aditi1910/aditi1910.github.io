@@ -996,9 +996,15 @@
        hand moves and gather when it stops — chasing the pointer directly
        would just give five dots at five fixed distances.
 
-       The arrow is never hidden. Replacing it is what made the first attempt
-       feel like it was dragging; the dots trail behind a pointer that is
-       still exactly where the hand put it. */
+       The arrow is hidden, so the lead dot is the pointer and the four behind
+       it are the trail. The hiding comes from .has-comet, which the script
+       adds only once the dots exist and the pointer has reported a real
+       position — so without JS, on a touch screen, or under reduced motion
+       the ordinary arrow stays and there is no state with nothing to aim. */
+    body.has-comet,
+    body.has-comet a, body.has-comet button, body.has-comet [role="button"],
+    body.has-comet .pass, body.has-comet summary, body.has-comet label[for] { cursor: none; }
+
     .comet-dot {
       position: fixed; top: 0; left: 0; z-index: 299;
       border-radius: 50%; background: var(--lav-d);
@@ -1012,7 +1018,24 @@
        have asked not to see. */
     @media (pointer: coarse), (prefers-reduced-motion: reduce) {
       .comet-dot { display: none !important; }
+      /* If the class is ever on here, the pointer must come back with it. */
+      body.has-comet { cursor: auto; }
+      body.has-comet a, body.has-comet button,
+      body.has-comet [role="button"], body.has-comet summary,
+      body.has-comet label[for] { cursor: pointer; }
+      body.has-comet .pass { cursor: grab; }
     }
+
+    /* The I-beam survives over running text and over anything being typed in.
+       Hiding it there costs someone copying an email or a figure more than
+       the effect gains. */
+    body.has-comet p, body.has-comet li,
+    body.has-comet h1, body.has-comet h2, body.has-comet h3,
+    body.has-comet input, body.has-comet textarea,
+    body.has-comet .proj-tile-desc, body.has-comet .fig-num,
+    body.has-comet code, body.has-comet pre { cursor: text; }
+    body.has-comet p a, body.has-comet li a,
+    body.has-comet h1 a, body.has-comet h2 a, body.has-comet h3 a { cursor: none; }
 </style>
 
   <!-- If JS is blocked or fails, show all content instead of a blank page -->
