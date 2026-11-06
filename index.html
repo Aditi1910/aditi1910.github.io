@@ -726,9 +726,7 @@
     #contact {
       padding: 5rem 5rem;
       background: linear-gradient(150deg, var(--lav) 0%, var(--sage) 50%, var(--sky) 100%);
-      /* Left, like every other section. Centred, this one read as a separate
-         page rather than the end of the same one. */
-      text-align: left;
+      text-align: center;
       position: relative; overflow: hidden;
     }
     #contactPlot {
@@ -748,7 +746,7 @@
       color: var(--ink); margin-bottom: 1rem;
     }
     .contact-heading em { font-style: italic; color: var(--lav-d); }
-    .contact-sub { font-size: 0.95rem; color: var(--muted-2); margin-bottom: 2.2rem;
+    .contact-sub { font-size: 0.95rem; color: var(--muted-2); margin: 0 auto 2.2rem;
       line-height: 1.75; max-width: 34em; }
     /* The pill is inline-flex and the email below it is inline-block, so on a
        wide screen they fit on one line and the email lands beside the
@@ -779,7 +777,8 @@
       font-size: clamp(1.7rem, 3.2vw, 2.5rem);
       font-weight: 300; letter-spacing: -0.01em; line-height: 1.1;
       color: var(--ink); text-decoration: none;
-      display: inline-block; padding: 0 2.4rem 0.7rem 0;
+      /* Even padding both sides so the rule sits centred under the words. */
+      display: inline-block; padding: 0 1.5rem 0.7rem;
       /* --line disappears against the contact gradient, so the rule is mixed
          from the ink instead and tracks the theme on its own. */
       border-bottom: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
@@ -792,7 +791,8 @@
 
     /* Quiet text links, not pills. At this point in the page the headline is
        doing the work and the buttons were competing with it. */
-    .socials { display: flex; gap: 1.8rem; flex-wrap: wrap; align-items: baseline; }
+    .socials { display: flex; gap: 1.8rem; flex-wrap: wrap;
+      align-items: baseline; justify-content: center; }
     .social-btn {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.74rem; letter-spacing: 0.1em;
@@ -803,7 +803,7 @@
     .social-btn:hover { color: var(--ink); border-color: var(--ink); }
     @media (max-width: 600px) {
       .socials { gap: 1.1rem 1.4rem; }
-      .contact-email { padding-right: 1.6rem; }
+      .contact-email { padding-left: 0.9rem; padding-right: 0.9rem; }
     }
 
     /* ── FOOTER ── */
