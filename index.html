@@ -990,27 +990,28 @@
       .fig-num { font-size: 1.95rem; }
     }
 
-    /* ── CURSOR GLOW ────────────────────────────────────────────────────
-       The ordinary pointer, with a soft pool of light drifting behind it.
-       Nothing is hidden and nothing is replaced, so the arrow can never feel
-       like it is dragging behind the hand.
+    /* ── CURSOR COMET ───────────────────────────────────────────────────
+       Five dots behind the pointer, each chasing the one ahead of it rather
+       than the pointer itself. That is what makes the tail stretch when the
+       hand moves and gather when it stops — chasing the pointer directly
+       would just give five dots at five fixed distances.
 
-       Dark theme only: on the cream background a violet pool reads as a
-       smudge rather than as light. */
-    .cursor-glow { display: none; }
-    html[data-theme="dark"] body.has-glow .cursor-glow {
-      display: block; position: fixed; top: 0; left: 0; z-index: 299;
-      width: 300px; height: 300px; margin: -150px 0 0 -150px;
-      border-radius: 50%; pointer-events: none; opacity: .55;
-      background: radial-gradient(circle, rgba(171,157,247,0.17) 0%, transparent 70%);
+       The arrow is never hidden. Replacing it is what made the first attempt
+       feel like it was dragging; the dots trail behind a pointer that is
+       still exactly where the hand put it. */
+    .comet-dot {
+      position: fixed; top: 0; left: 0; z-index: 299;
+      border-radius: 50%; background: var(--lav-d);
+      pointer-events: none; opacity: 0;
       transition: opacity .3s;
       will-change: transform;
     }
+    body.has-comet .comet-dot { opacity: var(--fade, 1); }
 
-    /* No pointer to follow on a touch screen, and a drifting light is motion
-       someone may have asked not to see. */
+    /* Nothing to trail on a touch screen, and a trail is motion someone may
+       have asked not to see. */
     @media (pointer: coarse), (prefers-reduced-motion: reduce) {
-      .cursor-glow { display: none !important; }
+      .comet-dot { display: none !important; }
     }
 </style>
 
@@ -2845,35 +2846,44 @@
 </script>
 
 <script>
-/* A soft pool of light drifting behind the ordinary pointer. The arrow is
-   never hidden or replaced — only the light lags, which is the part that
-   reads as flow without making the cursor itself feel slow. */
-(function cursorGlow(){
+/* Five dots trailing the pointer, each chasing the one in front of it. */
+(function comet(){
   if (!matchMedia('(pointer: fine)').matches) return;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  var glow = document.createElement('div');
-  glow.className = 'cursor-glow';
-  glow.setAttribute('aria-hidden','true');
-  document.body.appendChild(glow);
-  document.body.classList.add('has-glow');
+  var N = 5, RATE = 0.34;
+  var dots = [], xs = [], ys = [];
+  for (var i = 0; i < N; i++){
+    var size = 13 - i * 2;                        // 13, 11, 9, 7, 5
+    var d = document.createElement('div');
+    d.className = 'comet-dot';
+    d.setAttribute('aria-hidden','true');
+    d.style.width  = size + 'px';
+    d.style.height = size + 'px';
+    d.style.margin = (-size / 2) + 'px 0 0 ' + (-size / 2) + 'px';
+    d.style.setProperty('--fade', String(1 - i * 0.16));
+    document.body.appendChild(d);
+    dots.push(d); xs.push(0); ys.push(0);
+  }
 
-  var tx = innerWidth / 2, ty = innerHeight / 2;   // where the pointer is
-  var gx = tx, gy = ty;                            // where the light is
+  var tx = innerWidth / 2, ty = innerHeight / 2;
   var raf = null, seen = false;
 
-  function place(x, y){ glow.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)'; }
+  function place(el, x, y){ el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)'; }
 
   function step(){
-    gx += (tx - gx) * 0.085;
-    gy += (ty - gy) * 0.085;
-    place(gx, gy);
-    /* Stop once the light has caught up; a pointermove restarts it, so an
-       untouched page is not running a frame loop. */
-    if (Math.abs(tx - gx) < 0.1 && Math.abs(ty - gy) < 0.1){
-      gx = tx; gy = ty; place(gx, gy);
-      raf = null; return;
+    var moving = false;
+    for (var i = 0; i < N; i++){
+      var lx = i === 0 ? tx : xs[i-1];
+      var ly = i === 0 ? ty : ys[i-1];
+      xs[i] += (lx - xs[i]) * RATE;
+      ys[i] += (ly - ys[i]) * RATE;
+      place(dots[i], xs[i], ys[i]);
+      if (Math.abs(lx - xs[i]) > 0.1 || Math.abs(ly - ys[i]) > 0.1) moving = true;
     }
+    /* Stop once the tail has collapsed onto the pointer. A pointermove starts
+       it again, so an untouched page is not animating. */
+    if (!moving){ raf = null; return; }
     raf = requestAnimationFrame(step);
   }
   function wake(){ if (!raf) raf = requestAnimationFrame(step); }
@@ -2881,17 +2891,18 @@
   addEventListener('pointermove', function(ev){
     if (ev.pointerType !== 'mouse') return;
     tx = ev.clientX; ty = ev.clientY;
-    if (!seen){                 // start where the pointer actually is rather
-      seen = true;              // than sliding in from the middle of the page
-      gx = tx; gy = ty; place(gx, gy);
+    if (!seen){                 // start stacked on the pointer rather than
+      seen = true;              // streaming in from the middle of the page
+      for (var i = 0; i < N; i++){ xs[i] = tx; ys[i] = ty; place(dots[i], tx, ty); }
+      document.body.classList.add('has-comet');
     }
     wake();
   }, {passive:true});
 
-  /* Off the window entirely — fade out, so the light is not parked against an
-     edge while the real pointer is in another application. */
-  document.addEventListener('mouseleave', function(){ document.body.classList.remove('has-glow'); });
-  document.addEventListener('mouseenter', function(){ document.body.classList.add('has-glow'); });
+  /* Off the window entirely — fade out, so the tail is not left lying against
+     an edge while the real pointer is in another application. */
+  document.addEventListener('mouseleave', function(){ document.body.classList.remove('has-comet'); });
+  document.addEventListener('mouseenter', function(){ if (seen) document.body.classList.add('has-comet'); });
 
   /* A mouse can be unplugged and the motion preference can change while the
      page is open. */
@@ -2901,7 +2912,7 @@
     mq.addEventListener('change', function(){
       var ok = matchMedia('(pointer: fine)').matches &&
                !matchMedia('(prefers-reduced-motion: reduce)').matches;
-      document.body.classList.toggle('has-glow', ok);
+      document.body.classList.toggle('has-comet', ok && seen);
       if (!ok && raf){ cancelAnimationFrame(raf); raf = null; }
     });
   });
